@@ -1,12 +1,13 @@
-import javaobj
+import py_stringmatching as sm
 
 
-def main():
-  with open("./datasets/imdbProfiles", "rb") as fd:
-    marshaller = javaobj.JavaObjectUnmarshaller(fd)
-    pobj = marshaller.readObject()
-    print(pobj)
+test_string = ' .hel32lo, world!! data, science, is amazing!!. hello.'
 
+alphabet_tok = sm.AlphabeticTokenizer()
+print(alphabet_tok.tokenize(test_string))
 
-if __name__=="__main__":
-  main()
+delim_tok = sm.DelimiterTokenizer(delim_set=[','])
+print(delim_tok.tokenize(test_string))
+
+alnum_tok = sm.AlphanumericTokenizer()
+print(alnum_tok.tokenize(test_string))

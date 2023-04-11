@@ -1,0 +1,39 @@
+v0.4.3 - 2/8/2023
+  * Dropped support for Python 3.6.
+  * Added support for Python 3.10 and 3.11.
+  * Replaced aliases removed from Numpy 1.24.
+  * Switched from Nose to vanilla Unittest.
+  * Replaced Travis and Appveyor CI testing with Github Actions.
+
+v0.4.2 - 10/17/2020
+  * Bug fix: Made PartialRatio importable from py_stringmatching.
+  * Dropped support for Python 3.4.
+  * This is the last version of py_stringmatching that will support Python 2 and Python 3.5.
+
+v0.4.1 - 02/22/2019
+  * Cython version was updated. The package is now built with updated Cython version >= 0.27.3.
+  * Added support for Python 3.7 version and dropped Testing support for Python 3.3 version.
+
+v0.4.0 - 07/18/2017
+  * Rewritten five similarity measures in Cython: Affine, Jaro, Jaro Winkler, Needleman Wunsch, and Smith Waterman.
+  * Added benchmark scripts to measure the performance of similarity measures. 
+ 
+v0.3.0 - 05/29/2017
+  * Added nine new string similarity measures - Bag Distance, Editex,
+  Generalized Jaccard, Partial Ratio, Partial Token Sort, Ratio,
+  Soundex, Token Sort, and Tversky Index.
+
+v0.2.1 - 07/14/2016
+  * Remove explicit installation of numpy using pip in setup. Add numpy in setup_requires and compile extensions by including numpy install path.
+
+v0.2.0 - 07/06/2016
+  * Qgram tokenizers have been modified to take a flag called "padding". If this flag is True (the default), then a prefix and a suffix will be added to the input string before tokenizing (see the Tutorial for a reason for this).
+  * Version 0.1.0 does not handle strings in unicode correctly. Specifically, if an input string contains non-ascii characters, a string similarity measure may interpret the string incorrectly and thus compute an incorrect similarity score. In this version we have fixed the string similarity measures. Specifically, we convert the input strings into unicode before computing similarity measures. NOTE: the tokenizers are still not yet unicode-aware.
+  * In Version 0.1.0, the flag "dampen" for TF/IDF similarity measure has the default value of False. In this version we have modified it to have the default value of True, which is the more common value for this flag in practice.
+
+v0.1.0 - 06/14/2016
+  * Initial release. 
+  * Contains 5 tokenizers - Alphabetic tokenizer, Alphanumeric tokenizer, Delimiter tokenizer, Qgram tokenizer and
+    Whitespace tokenizer.
+  * Contains 14 similarity measures - Affine, Cosine, Dice, Hamming distance, Jaccard, Jaro, Jaro-Winkler, 
+    Levenshtein, Monge-Elkan, Needleman-Wunsch, Overlap coefficient, Smith-Waterman, Soft TF-IDF, and TF-IDF.
