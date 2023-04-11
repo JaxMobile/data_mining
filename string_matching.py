@@ -1,0 +1,201 @@
+import matplotlib
+import pandas as pd
+import py_stringmatching as sm
+from sklearn import svm, linear_model
+import numpy as np
+import pylab as plt
+from sklearn.metrics import roc_curve, auc, f1_score
+
+
+# %matplotlib inline
+# These are the "Tableau 20" colors as RGB.
+tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
+             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
+             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
+             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),
+             (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+
+
+class StringMatching:
+
+    def __init__(self):
+        self.levenshtein = sm.Levenshtein()
+        self.jaccard = sm.Jaccard()
+        self.tfidf = sm.TfIdf()
+        self.soft_tfidf = sm.SoftTfIdf()
+        self.jaro = sm.Jaro()
+        self.jaro_winkler = sm.JaroWinkler()
+        self.partial_ratio = sm.PartialRatio()
+        self.dice = sm.Dice()
+        self.cosine = sm.Cosine()
+        self.alnum_tok_set = sm.AlphanumericTokenizer(return_set=True)
+        self.alnum_tok_bag = sm.AlphanumericTokenizer()
+        self.qg2_tok = sm.QgramTokenizer()
+        self.qg3_tok = sm.QgramTokenizer(3)
+        self.qg4_tok = sm.QgramTokenizer(4)
+
+        for i in range(len(tableau20)):
+            r, g, b = tableau20[i]
+            tableau20[i] = (r / 255., g / 255., b / 255.)
+
+    def train(self, samples: list, sep='\t'):
+        # from the training set, find all distances each pair, then pass to SVM and Logistic Regression
+
+        X_train = list()
+        y_train = list()
+        for sample in samples:
+            # print(sample)
+           # print(sample[0])
+            line = sample[0].split(sep)
+
+            train_str1 = line[0].lower()
+            train_str2 = line[1].lower()
+            train_distances = self.find_distances(train_str1, train_str2)
+            X_train.append(train_distances)
+            y_train.append(int(line[2]))
+
+        X = np.array(X_train, dtype=float)
+        y = np.array(y_train, dtype=float)
+
+        print('X: ', X)
+        print('y: ', y)
+
+        clf = svm.LinearSVC(C=1., dual=False, loss='squared_hinge', penalty='l2')
+        clf2 = linear_model.LogisticRegression(C=1., dual=False, penalty='l2')
+        clf.fit(X, y)
+        clf2.fit(X, y)
+
+        weights = np.array(clf.coef_[0])
+        print(weights)
+        weights = np.array(clf2.coef_[0])
+        print(weights)
+
+        return clf, clf2
+
+    def test(self, test_samples: list, clf, clf2, sep='\t'):
+        # for each of samples from test dataset, calculate its similarity and test with SVM model and LR model
+
+        predict = np.zeros((len(test_samples), 14))
+        # print('predict.shape: ', predict.shape)
+        for i, test_sample in enumerate(test_samples):
+            line = test_sample[0].split(sep)
+            test_str1 = line[0].lower()
+            test_str2 = line[1].lower()
+
+            temp_distances = self.find_distances(test_str1, test_str2)
+            temp_distances = np.array(temp_distances, dtype=float).reshape(1, -1)
+
+            # print('temp_distances.shape: ', temp_distances.shape)
+
+            # print('current i: ', i)
+            predict[i, :-3] = temp_distances
+
+            # SVM
+            predict[i, -3] = clf.decision_function(temp_distances)
+
+            # Logit
+            predict[i, -2] = clf2.decision_function(temp_distances)
+
+            predict[i, -1] = line[2]
+
+        return predict
+
+    def find_distances(self, str1, str2):
+        # calculate the similarity measure and put the results in list
+        # Levenshtein, Jaccard, TF/IDF, soft TF/IDF, Jaro, Jaro Winkler, Dice 2, Dice 3, Dice 4, Cosine
+
+        set1 = self.alnum_tok_set.tokenize(str1)
+        set2 = self.alnum_tok_set.tokenize(str2)
+
+        bag1 = self.alnum_tok_bag.tokenize(str1)
+        bag2 = self.alnum_tok_bag.tokenize(str2)
+
+        return [self.levenshtein.get_sim_score(str1, str2),
+                self.jaccard.get_sim_score(set1, set2),
+                self.tfidf.get_sim_score(bag1, bag2),
+                self.soft_tfidf.get_raw_score(bag1, bag2),
+                self.jaro.get_sim_score(str1, str2),
+                self.jaro_winkler.get_sim_score(str1, str2),
+                self.partial_ratio.get_sim_score(str1, str2),
+                self.dice.get_sim_score(self.qg2_tok.tokenize(str1), self.qg2_tok.tokenize(str2)),
+                self.dice.get_sim_score(self.qg3_tok.tokenize(str1), self.qg3_tok.tokenize(str2)),
+                self.dice.get_sim_score(self.qg4_tok.tokenize(str1), self.qg4_tok.tokenize(str2)),
+                self.cosine.get_sim_score(set1, set2)]
+
+    # Plot results
+    def barplot(self, x, y, xlabel, ylabel, xticks):
+        fig = plt.figure(figsize=(9, 6))
+        ax = fig.add_subplot(111)
+        ax.bar(range(x), y)
+
+        plt.xticks(np.arange(x) + 0.5, xticks, rotation=45)
+        ax.set_ylabel(ylabel)
+        ax.set_xlabel(xlabel)
+        plt.legend(loc=2)
+        plt.show()
+
+    def plot(self, predict):
+        """
+            Plot the results based on predict (last column real, other columns as in find_distances + svm + logit )
+            """
+        labelsM = ["Lev",  "Jaccard", "TF/IDF", "Soft TF/IDF", "Jaro", "Jaro Wrinkler", "Partial Ration", "Dice 2",
+                   "Dice 3", "Dice 4", "Cosine", "SVM", "Logit"]
+
+        dimMatrix = len(labelsM)
+
+        f1matrix = np.zeros((100, dimMatrix))
+
+        print('predict.shape: ', predict.shape)
+
+        iC = -1
+        for i in np.linspace(0, 1, 100):
+            iC += 1
+            for j in range(dimMatrix):
+                t = np.array(predict[:, j])
+                if j >= dimMatrix - 2:
+                    t = (t - np.min(t)) / (np.max(t) - np.min(t))
+                f1matrix[iC, j] = f1_score(y_pred=t > i, y_true=predict[:, -1])
+
+        F1scores = np.max(f1matrix, axis=0)
+        self.barplot(dimMatrix, F1scores, xlabel="Parameter", ylabel="F1 score", xticks=labelsM)
+
+        fig = plt.figure(figsize=(9, 6))
+        ax = fig.add_subplot(111)
+        AUCScores = []
+        for j in range(dimMatrix):
+            # Compute ROC curve and area the curve
+            fpr, tpr, thresholds = roc_curve(predict[:, -1], predict[:, j])
+            AUCScores.append(auc(fpr, tpr))
+
+            # Plot ROC curve
+            ax.plot(fpr, tpr, label=labelsM[j], color=tableau20[j])
+            ax.plot([0, 1], [0, 1], 'k--')
+            plt.xlim([0.0, 1.0])
+            plt.ylim([0.0, 1.0])
+            ax.set_xlabel('False Positive Rate')
+            ax.set_ylabel('True Positive Rate')
+            ax.set_title('ROC Curve')
+
+        plt.legend(loc=2)
+
+        plt.show()
+
+        # self.barplot(dimMatrix, AUCScores, xlabel="Parameter", ylabel="Area Under Curve", xticks=labelsM)
+
+
+strmat = StringMatching()
+samples = list()
+# test all
+# samples_df = pd.read_csv('datasets/train.csv')
+samples_df = pd.read_csv('datasets/abtBuyIdDuplicates-datasets-train.csv')
+for i in range(len(samples_df)):
+    samples.append(samples_df.values[i])
+clf, clf2 = strmat.train(samples, '\t')
+test_samples = list()
+# samples_test = pd.read_csv('datasets/test.csv', sep='\t')
+samples_test = pd.read_csv('datasets/abtBuyIdDuplicates-datasets-test.csv', sep='\t')
+for i in range(len(samples_df)):
+    test_samples.append(samples_df.values[i])
+prd = strmat.test(test_samples, clf, clf2, '\t')
+# print(prd)
+strmat.plot(prd)
