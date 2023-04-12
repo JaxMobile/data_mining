@@ -4,3 +4,5 @@ numpy=1.24.2
 matplotlib=3.7.1
 pandas=2.0.0
 scikit-learn=1.2.2
+py-stringsimjoin=0.3.3
+py-stringmatching=0.4.3

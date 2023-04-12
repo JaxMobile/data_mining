@@ -182,12 +182,14 @@ class StringMatching:
 
         # self.barplot(dimMatrix, AUCScores, xlabel="Parameter", ylabel="Area Under Curve", xticks=labelsM)
 
-    def get_accuracy(result_sample, computed_sample):
+    def filter_resultsample(self, result_sample, upper_bound):
+        filter_list = list(filter(lambda x: x[2]>=upper_bound, result_sample))
+
+        return [[item[0], item[1]] for item in filter_list]
+        
+    def get_accuracy(self, result_sample, computed_sample):
       """
           # Format of a sample [[id_match1, id_match2], ... ]
-          # MOCK: 
-          # computed_sample = [[335,124],[123,456], [321, 654], [231,283]]
-          # result_sample = [[123,333], [231,283], [321,654]]
       """
       two_way_result = []
       for x,y in result_sample:
@@ -228,7 +230,13 @@ if __name__ == "__main__":
     # strmat.plot(prd)
 
     # ######### DATASET 2 ###########
-    # strmat = StringMatching()
-    # 1. get_accuracy(computed_sample, result_sample) for each distance
-    # 2. strmat = StringMatching() => strmat.barplot() for displaying the accuracy chart
-    pass
+    strmat = StringMatching()
+
+    # MOCK: 
+    computed_sample = [[335,124, 0.4], [123,456, 0.6], [321, 654, 0.8], [231,283, 0.5]]
+    result_sample = [[123,333], [231,283], [321,654]]
+
+    computed_sample= strmat.filter_resultsample(computed_sample, 0.5)  # 1. Filter sample with accuracy
+    accuracy = strmat.get_accuracy(computed_sample, result_sample) # 2. Get accuracy
+    # strmat.barplot()  # 3. Plot
+
