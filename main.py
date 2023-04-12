@@ -1,13 +1,14 @@
 import py_stringmatching as sm
+import pandas as pd
+import numpy as np
 
 
-test_string = ' .hel32lo, world!! data, science, is amazing!!. hello.'
 
-alphabet_tok = sm.AlphabeticTokenizer()
-print(alphabet_tok.tokenize(test_string))
 
-delim_tok = sm.DelimiterTokenizer(delim_set=[','])
-print(delim_tok.tokenize(test_string))
+# Accuracy function
+# samples = []
+# samples_df = pd.read_csv('datasets/abtBuyIdDuplicates.csv')
+# for i in range(len(samples_df)):
+#     sample = samples_df.values[i]
+#     samples.append(sample)
 
-alnum_tok = sm.AlphanumericTokenizer()
-print(alnum_tok.tokenize(test_string))

@@ -182,20 +182,53 @@ class StringMatching:
 
         # self.barplot(dimMatrix, AUCScores, xlabel="Parameter", ylabel="Area Under Curve", xticks=labelsM)
 
+    def get_accuracy(result_sample, computed_sample):
+      """
+          # Format of a sample [[id_match1, id_match2], ... ]
+          # MOCK: 
+          # computed_sample = [[335,124],[123,456], [321, 654], [231,283]]
+          # result_sample = [[123,333], [231,283], [321,654]]
+      """
+      two_way_result = []
+      for x,y in result_sample:
+        two_way_result = two_way_result + [[x,y]] + [[y,x]]
 
-strmat = StringMatching()
-samples = list()
-# test all
-# samples_df = pd.read_csv('datasets/train.csv')
-samples_df = pd.read_csv('datasets/abtBuyIdDuplicates-datasets-train.csv')
-for i in range(len(samples_df)):
-    samples.append(samples_df.values[i])
-clf, clf2 = strmat.train(samples, '\t')
-test_samples = list()
-# samples_test = pd.read_csv('datasets/test.csv', sep='\t')
-samples_test = pd.read_csv('datasets/abtBuyIdDuplicates-datasets-test.csv', sep='\t')
-for i in range(len(samples_df)):
-    test_samples.append(samples_df.values[i])
-prd = strmat.test(test_samples, clf, clf2, '\t')
-# print(prd)
-strmat.plot(prd)
+      c1_result, c2_result = zip(*two_way_result)
+      np_array = np.array(c1_result)
+      acc_count = 0
+      for item1, item2 in computed_sample:
+        found_index = np.where(np_array==item1)
+        if not len(found_index[0]): #We assume if there is no index found in result so it is not matched
+            continue
+        #Each id in each pair of result MUST be distintive
+        if item2 == c2_result[found_index[0][0]]:
+            acc_count=acc_count+1
+      
+      return acc_count/max(len(result_sample), len(computed_sample))
+          
+
+if __name__ == "__main__":
+    # ######### DATASET 1 ###########
+    # strmat = StringMatching()
+    # samples = list()
+    # # test all
+    # # samples_df = pd.read_csv('datasets/train.csv')
+    # samples_df = pd.read_csv('datasets/abtBuyIdDuplicates-datasets-train.csv')
+    # for i in range(len(samples_df)):
+    #     samples.append(samples_df.values[i])
+    # clf, clf2 = strmat.train(samples, '\t')
+
+    # test_samples = list()
+    # # samples_test = pd.read_csv('datasets/test.csv', sep='\t')
+    # samples_test = pd.read_csv('datasets/abtBuyIdDuplicates-datasets-test.csv', sep='\t')
+    # for i in range(len(samples_df)):
+    #     test_samples.append(samples_df.values[i])
+    # prd = strmat.test(test_samples, clf, clf2, '\t')
+    # print(prd)
+    # strmat.plot(prd)
+
+    # ######### DATASET 2 ###########
+    # strmat = StringMatching()
+    # 1. get_accuracy(computed_sample, result_sample) for each distance
+    # 2. strmat = StringMatching() => strmat.barplot() for displaying the accuracy chart
+    pass
